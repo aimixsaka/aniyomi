@@ -2,17 +2,19 @@ package eu.kanade.presentation.more.settings.screen.player
 
 import android.content.pm.ActivityInfo
 import android.os.Build
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.currentOrThrow
 import eu.kanade.core.preference.asState
 import eu.kanade.domain.base.BasePreferences
 import eu.kanade.presentation.more.settings.Preference
@@ -34,8 +36,11 @@ import eu.kanade.tachiyomi.ui.player.X_PLAYER
 import eu.kanade.tachiyomi.ui.player.settings.PlayerPreferences
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentMapOf
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.collections.immutable.toPersistentMap
 import tachiyomi.i18n.MR
+import tachiyomi.presentation.core.components.WheelTextPicker
+import tachiyomi.presentation.core.components.material.TextButton
 import tachiyomi.presentation.core.i18n.stringResource
 import tachiyomi.presentation.core.util.collectAsState
 import uy.kohesive.injekt.Injekt
