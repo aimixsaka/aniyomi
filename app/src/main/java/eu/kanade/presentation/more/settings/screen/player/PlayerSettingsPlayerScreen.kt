@@ -1,13 +1,25 @@
 package eu.kanade.presentation.more.settings.screen.player
 
 import android.os.Build
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import eu.kanade.core.preference.asState
 import eu.kanade.domain.base.BasePreferences
 import eu.kanade.presentation.more.settings.Preference
 import eu.kanade.presentation.more.settings.screen.SearchableSettings
+import eu.kanade.tachiyomi.data.torrentServer.TorrentServerPreferences
+import eu.kanade.tachiyomi.data.torrentServer.service.TorrentServerService
 import eu.kanade.tachiyomi.ui.player.JUST_PLAYER
 import eu.kanade.tachiyomi.ui.player.MPV_KT
 import eu.kanade.tachiyomi.ui.player.MPV_KT_PREVIEW
@@ -24,8 +36,11 @@ import eu.kanade.tachiyomi.ui.player.X_PLAYER
 import eu.kanade.tachiyomi.ui.player.settings.PlayerPreferences
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentMapOf
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.collections.immutable.toPersistentMap
 import tachiyomi.i18n.MR
+import tachiyomi.presentation.core.components.WheelTextPicker
+import tachiyomi.presentation.core.components.material.TextButton
 import tachiyomi.presentation.core.i18n.stringResource
 import tachiyomi.presentation.core.util.collectAsState
 import uy.kohesive.injekt.Injekt
@@ -42,6 +57,7 @@ object PlayerSettingsPlayerScreen : SearchableSettings {
     override fun getPreferences(): List<Preference> {
         val playerPreferences = remember { Injekt.get<PlayerPreferences>() }
         val basePreferences = remember { Injekt.get<BasePreferences>() }
+        val torrentServerPreferences = remember { Injekt.get<TorrentServerPreferences>() }
         val deviceSupportsPip = basePreferences.deviceHasPip()
 
         return listOfNotNull(
@@ -76,6 +92,7 @@ object PlayerSettingsPlayerScreen : SearchableSettings {
                 playerPreferences = playerPreferences,
                 basePreferences = basePreferences,
             ),
+            getTorrentServerGroup(torrentServerPreferences),
         )
     }
 
@@ -242,6 +259,99 @@ object PlayerSettingsPlayerScreen : SearchableSettings {
                     entries = (mapOf("" to "None") + packageNamesMap).toPersistentMap(),
                 ),
             ),
+        )
+    }
+
+    @Composable
+    private fun getTorrentServerGroup(
+        torrentServerPreferences: TorrentServerPreferences,
+    ): Preference.PreferenceGroup {
+        val scope = rememberCoroutineScope()
+        val trackersPref = torrentServerPreferences.trackers()
+        val trackers by trackersPref.collectAsState()
+
+        return Preference.PreferenceGroup(
+            title = stringResource(MR.strings.pref_category_torrentserver),
+            preferenceItems = persistentListOf(
+                Preference.PreferenceItem.EditTextPreference(
+                    pref = torrentServerPreferences.port(),
+                    title = stringResource(MR.strings.pref_torrentserver_port),
+                    onValueChanged = {
+                        try {
+                            Integer.parseInt(it)
+                            TorrentServerService.stop()
+                            true
+                        } catch (e: Exception) {
+                            false
+                        }
+                    },
+                ),
+                Preference.PreferenceItem.MultiLineEditTextPreference(
+                    pref = torrentServerPreferences.trackers(),
+                    title = stringResource(MR.strings.pref_torrent_trackers),
+                    subtitle = trackersPref.asState(scope).value
+                        .lines().take(2)
+                        .joinToString(
+                            separator = "\n",
+                            postfix = if (trackersPref.asState(scope).value.lines().size > 2) "\n..." else "",
+                        ),
+                    onValueChanged = {
+                        TorrentServerService.stop()
+                        true
+                    },
+                ),
+                Preference.PreferenceItem.TextPreference(
+                    title = stringResource(MR.strings.pref_reset_torrent_trackers_string),
+                    enabled = remember(trackers) { trackers != trackersPref.defaultValue() },
+                    onClick = {
+                        trackersPref.delete()
+                    },
+                ),
+            ),
+        )
+    }
+
+    @Composable
+    private fun SkipIntroLengthDialog(
+        initialSkipIntroLength: Int,
+        onDismissRequest: () -> Unit,
+        onValueChanged: (skipIntroLength: Int) -> Unit,
+    ) {
+        val skipIntroLengthValue by rememberSaveable { mutableStateOf(initialSkipIntroLength) }
+        var newLength = 0
+        AlertDialog(
+            onDismissRequest = onDismissRequest,
+            title = { Text(text = stringResource(MR.strings.pref_intro_length)) },
+            text = {
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    content = {
+                        WheelTextPicker(
+                            modifier = Modifier.align(Alignment.Center),
+                            items = remember { 0..255 }.map {
+                                stringResource(
+                                    MR.strings.seconds_short,
+                                    it,
+                                )
+                            }.toImmutableList(),
+                            onSelectionChanged = {
+                                newLength = it
+                            },
+                            startIndex = skipIntroLengthValue,
+                        )
+                    },
+                )
+            },
+            dismissButton = {
+                TextButton(onClick = onDismissRequest) {
+                    Text(text = stringResource(MR.strings.action_cancel))
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { onValueChanged(newLength) }) {
+                    Text(text = stringResource(MR.strings.action_ok))
+                }
+            },
         )
     }
 }
