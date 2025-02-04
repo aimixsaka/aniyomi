@@ -61,6 +61,7 @@ import tachiyomi.i18n.MR
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import uy.kohesive.injekt.injectLazy
+import java.net.URI
 import java.util.Locale
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.coroutines.coroutineContext
@@ -1177,6 +1178,19 @@ class AnimeDownloader(
                     "Launch intent not found",
                 )
                 when {
+                    // Aria2App
+                    pkgName.startsWith("com.gianlu.aria2app") -> {
+                        intent.apply {
+                            component = ComponentName(
+                                pkgName,
+                                "com.gianlu.aria2app.activities.AddUriActivity"
+                            )
+                            action = Intent.ACTION_VIEW
+                            val uri  = URI.create(video.videoUrl)
+                            putExtra("uri", uri)
+                            putExtra("filename", "$filename.mp4")
+                        }
+                    }
                     // 1DM
                     pkgName.startsWith("idm.internet.download.manager") -> {
                         intent.apply {
