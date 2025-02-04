@@ -1177,6 +1177,18 @@ class AnimeDownloader(
                     "Launch intent not found",
                 )
                 when {
+                    // Aria2App
+                    pkgName.startsWith("com.gianlu.aria2app") -> {
+                        intent.apply {
+                            component = ComponentName(
+                                pkgName,
+                                "com.gianlu.aria2app.activities.AddUriActivity"
+                            )
+                            action = Intent.ACTION_VIEW
+                            putExtra("uri", video.videoUrl)
+                            putExtra("filename", "$filename.mp4")
+                        }
+                    }
                     // 1DM
                     pkgName.startsWith("idm.internet.download.manager") -> {
                         intent.apply {

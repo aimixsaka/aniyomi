@@ -371,6 +371,7 @@ object SettingsDownloadScreen : SearchableSettings {
                 "idm.internet.download.manager" -> true
                 "idm.internet.download.manager.plus" -> true
                 "idm.internet.download.manager.adm.lite" -> true
+                "com.gianlu.aria2app" -> true
                 "com.dv.adm" -> true
                 else -> false
             }
